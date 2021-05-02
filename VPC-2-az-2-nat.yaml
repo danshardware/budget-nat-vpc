@@ -1,0 +1,554 @@
+Description:  Deploys a VPC with 2 AZs, and 2 custom NAT instances. 
+
+Parameters:
+  Prefix:
+    Description: Something to prefix all the resources with
+    Type: String
+    Default: Dev
+
+  CostCenter:
+    Description: Tag for cost tracking. Leave blank to ignore
+    Type: String
+    Default: "" 
+  
+  MaxBandwidth:
+    Description: Maximum bandwidth each NAT instance will limit traffic to in Mbps. Defaults to 100Mbps
+    Type: Number
+    Default: 100
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  CIDRPublic1:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.0.0/24
+
+  CIDRPublic2:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.1.0/24
+
+  CIDRPrivate1:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.128.0/24
+
+  CIDRPrivate2:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.129.0/24
+
+Conditions:
+  HaveCostCenterTag: !Not 
+    - !Equals
+      - !Ref CostCenter
+      - ""
+
+Mappings:
+  AWSAMIRegionMap:
+    ap-northeast-1:
+      AMI: ami-0800db40f6e26830c
+      type: t4g.nano
+    ap-northeast-2:
+      AMI: ami-0f3a772251a577ef5
+      type: t4g.nano
+    ap-northeast-3:
+      AMI: ami-0b952639ebf988d92
+      type: t4g.nano
+    ap-south-1:
+      AMI: ami-0e6658a4ead79ca75
+      type: t4g.nano
+    ap-southeast-1:
+      AMI: ami-068744a0751408143
+      type: t4g.nano
+    ap-southeast-2:
+      AMI: ami-0152039248f1ee03f
+      type: t4g.nano
+    ca-central-1:
+      AMI: ami-0cac40fc6c70522a6
+      type: t4g.nano
+    eu-central-1:
+      AMI: ami-06e0f87a4491c1b8b
+      type: t4g.nano
+    eu-north-1:
+      AMI: ami-0817cb16be117c750
+      type: t4g.nano
+    eu-west-1:
+      AMI: ami-0bb2387e584b28b9c
+      type: t4g.nano
+    eu-west-2:
+      AMI: ami-0532b93463005db15
+      type: t4g.nano
+    eu-west-3:
+      AMI: ami-01a790ae76e9f8a07
+      type: t4g.nano
+    sa-east-1:
+      AMI: ami-096cd58c3fc542241
+      type: t4g.nano
+    us-east-1:
+      AMI: ami-00315de4391ce4f6d
+      type: t4g.nano
+    us-east-2:
+      AMI: ami-0264aa084692a7aa1
+      type: t4g.nano
+    us-west-1:
+      AMI: ami-0fda9f22793342947
+      type: t4g.nano
+    us-west-2:
+      AMI: ami-0b1726c83b5f200ed
+      type: t4g.nano
+
+Resources:
+  # /----------------------------------------------/
+  # / The VPC and Network
+  # /----------------------------------------------/
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-VPC
+        - !If
+          - HaveCostCenterTag
+          - {Key: CostCenter, Value: !Ref CostCenter}
+          - !Ref AWS::NoValue
+
+  Gateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-Gateway
+        - !If
+          - HaveCostCenterTag
+          - {Key: CostCenter, Value: !Ref CostCenter}
+          - !Ref AWS::NoValue
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref Gateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref CIDRPublic1
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Public Subnet 1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref CIDRPublic2
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Public Subnet 2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref CIDRPrivate1
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Private Subnet 1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref CIDRPrivate2
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Private Subnet 2
+  # /----------------------------------------------/
+  # / Endpoints
+  # /----------------------------------------------/
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Prefix}-Enpoint-SG
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTPS from VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref VpcCIDR
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: !Ref VpcCIDR
+  S3Endpoint: 
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties: 
+      # SecurityGroupIds:
+      #    - !Ref EndpointSecurityGroup
+      RouteTableIds: 
+        - !Ref PublicRouteTable
+        - !Ref PrivateRouteTable1
+        - !Ref PrivateRouteTable2
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .s3
+      VpcId: !Ref VPC
+  SSMEndpoint: 
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties: 
+      PrivateDnsEnabled: true
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+         - !Ref EndpointSecurityGroup
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssm
+      VpcId: !Ref VPC
+  Ec2MessagesEndpoint: 
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties: 
+      PrivateDnsEnabled: true
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+         - !Ref EndpointSecurityGroup
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ec2messages
+      VpcId: !Ref VPC
+  SSMMessagesEndpoint: 
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties: 
+      PrivateDnsEnabled: true
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+         - !Ref EndpointSecurityGroup
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssmmessages
+      VpcId: !Ref VPC
+  # /----------------------------------------------/
+  # / The NAT Gateways
+  # /----------------------------------------------/
+
+  NatEip1:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Nat1
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-NAT-EIP-1
+        - !If
+          - HaveCostCenterTag
+          - {Key: CostCenter, Value: !Ref CostCenter}
+          - !Ref AWS::NoValue
+  NatEip2:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Nat2
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-NAT-EIP-2
+        - !If
+          - HaveCostCenterTag
+          - {Key: CostCenter, Value: !Ref CostCenter}
+          - !Ref AWS::NoValue
+  NatRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+  NatProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref 'NatRole']
+  Nat1:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref 'NatProfile'
+      ImageId: !FindInMap
+        - AWSAMIRegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType: !FindInMap
+          - AWSAMIRegionMap
+          - !Ref 'AWS::Region'
+          - type
+      SecurityGroupIds: [!Ref 'NatSecurityGroup']
+      SubnetId: !Ref PublicSubnet1
+      SourceDestCheck: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${Prefix}-Nat-1
+      - !If
+        - HaveCostCenterTag
+        - {Key: CostCenter, Value: !Ref CostCenter}
+        - !Ref AWS::NoValue
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y > /dev/null
+          yum install -y tc > /dev/null
+          echo 1 > /proc/sys/net/ipv4/ip_forward
+          INTERFACE=eth0
+          iptables -t nat -A POSTROUTING -s ${VpcCIDR} -o $INTERFACE -j MASQUERADE
+          sed -i 's/scripts-user$/\[scripts-user, always\]/' /etc/cloud/cloud.cfg
+          # At this point, the NAT instance is done. The next lines limit bandwidth
+          LIMIT=$(printf "%.0fkbit" "$((10**3 * ${MaxBandwidth}))")
+          LIMIT20=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT80=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 8))e-4")
+          tc qdisc add dev $INTERFACE root handle 1: htb default 12
+          tc class add dev $INTERFACE parent 1: classid 1:1 htb rate $LIMIT ceil $LIMIT burst 10k
+          tc class add dev $INTERFACE parent 1:1 classid 1:10 htb rate $LIMIT20 ceil $LIMIT40 prio 1 burst 10k
+          tc class add dev $INTERFACE parent 1:1 classid 1:12 htb rate $LIMIT80 ceil $LIMIT prio 2
+          tc filter add dev $INTERFACE protocol ip parent 1:0 prio 1 u32 match ip protocol 0x11 0xff flowid 1:10
+          tc qdisc add dev $INTERFACE parent 1:10 handle 20: sfq perturb 10
+          tc qdisc add dev $INTERFACE parent 1:12 handle 30: sfq perturb 10
+          # manually move some stuff to high priority
+          # Set high-priority class and relevant protocols whch uses it
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp -m tos --tos Minimize-Delay -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p icmp -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 53 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 53 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 80 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 80 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 443 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 443 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 22 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 22 -j CLASSIFY --set-class 1:10
+          # a couple more tables to tag short, TCP signalling packets correctly
+          iptables -t mangle -N ack
+          iptables -t mangle -A ack -m tos ! --tos Normal-Service -j RETURN
+          iptables -t mangle -A ack -p tcp -m length --length 0:128 -j TOS --set-tos Minimize-Delay
+          iptables -t mangle -A ack -p tcp -m length --length 128: -j TOS --set-tos Maximize-Throughput
+          iptables -t mangle -A ack -j RETURN
+          iptables -t mangle -A POSTROUTING -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -j ack
+          iptables -t mangle -N tosfix
+          iptables -t mangle -A tosfix -p tcp -m length --length 0:512 -j RETURN
+          iptables -t mangle -A tosfix -j TOS --set-tos Maximize-Throughput
+          iptables -t mangle -A tosfix -j RETURN
+  Nat2:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref 'NatProfile'
+      ImageId: !FindInMap
+        - AWSAMIRegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType: !FindInMap
+          - AWSAMIRegionMap
+          - !Ref 'AWS::Region'
+          - type
+      SecurityGroupIds: [!Ref 'NatSecurityGroup']
+      SubnetId: !Ref PublicSubnet2
+      SourceDestCheck: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${Prefix}-Nat-2
+      - !If
+        - HaveCostCenterTag
+        - {Key: CostCenter, Value: !Ref CostCenter}
+        - !Ref AWS::NoValue
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y > /dev/null
+          yum install -y tc > /dev/null
+          echo 1 > /proc/sys/net/ipv4/ip_forward
+          INTERFACE=eth0
+          iptables -t nat -A POSTROUTING -s ${VpcCIDR} -o $INTERFACE -j MASQUERADE
+          sed -i 's/scripts-user$/\[scripts-user, always\]/' /etc/cloud/cloud.cfg
+          # At this point, the NAT instance is done. The next lines limit bandwidth
+          LIMIT=$(printf "%.0fkbit" "$((10**3 * ${MaxBandwidth}))")
+          LIMIT20=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT80=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 8))e-4")
+          tc qdisc add dev $INTERFACE root handle 1: htb default 12
+          tc class add dev $INTERFACE parent 1: classid 1:1 htb rate $LIMIT ceil $LIMIT burst 10k
+          tc class add dev $INTERFACE parent 1:1 classid 1:10 htb rate $LIMIT20 ceil $LIMIT40 prio 1 burst 10k
+          tc class add dev $INTERFACE parent 1:1 classid 1:12 htb rate $LIMIT80 ceil $LIMIT prio 2
+          tc filter add dev $INTERFACE protocol ip parent 1:0 prio 1 u32 match ip protocol 0x11 0xff flowid 1:10
+          tc qdisc add dev $INTERFACE parent 1:10 handle 20: sfq perturb 10
+          tc qdisc add dev $INTERFACE parent 1:12 handle 30: sfq perturb 10
+          # manually move some stuff to high priority
+          # Set high-priority class and relevant protocols whch uses it
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp -m tos --tos Minimize-Delay -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p icmp -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 53 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 53 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 80 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 80 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 443 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 443 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 22 -j CLASSIFY --set-class 1:10
+          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 22 -j CLASSIFY --set-class 1:10
+          # a couple more tables to tag short, TCP signalling packets correctly
+          iptables -t mangle -N ack
+          iptables -t mangle -A ack -m tos ! --tos Normal-Service -j RETURN
+          iptables -t mangle -A ack -p tcp -m length --length 0:128 -j TOS --set-tos Minimize-Delay
+          iptables -t mangle -A ack -p tcp -m length --length 128: -j TOS --set-tos Maximize-Throughput
+          iptables -t mangle -A ack -j RETURN
+          iptables -t mangle -A POSTROUTING -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -j ack
+          iptables -t mangle -N tosfix
+          iptables -t mangle -A tosfix -p tcp -m length --length 0:512 -j RETURN
+          iptables -t mangle -A tosfix -j TOS --set-tos Maximize-Throughput
+          iptables -t mangle -A tosfix -j RETURN
+  NatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for Nat host
+      VpcId: !Ref 'VPC'
+      SecurityGroupEgress: 
+        - Description: Allow ALL
+          CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+      SecurityGroupIngress: 
+        - Description: Allow all from local
+          IpProtocol: -1
+          CidrIp: !Ref VpcCIDR
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Default Route Table (Public)
+
+  PublicRouteTableDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Gateway
+
+  PublicSubnet1RouteAssoc:  
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Private Routes (AZ1)
+
+  PrivateRouteTable1Default:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref Nat1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} Private Routes 2
+
+  PrivateRouteTable2Default:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref Nat2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+
+  Nat1:
+    Description: ID of AZ1's Nat Instance
+    Value: !Ref Nat1
+
+  Nat1PublicIp:
+    Description: AZ1's Nat Public IP
+    Value: !Ref NatEip1
+
+  Nat2:
+    Description: ID of AZ2's Nat Instance
+    Value: !Ref Nat2
+  
+  Nat2PublicIp:
+    Description: AZ2's Nat Public IP
+    Value: !Ref NatEip2
+  
+  PublicSubnets:
+    Description: A list of the public subnets
+    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]]
+
+  PrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]]
