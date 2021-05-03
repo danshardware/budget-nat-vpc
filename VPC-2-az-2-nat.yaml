@@ -343,7 +343,7 @@ Resources:
           # At this point, the NAT instance is done. The next lines limit bandwidth
           LIMIT=$(printf "%.0fkbit" "$((10**3 * ${MaxBandwidth}))")
           LIMIT20=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
-          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 4))e-4")
           LIMIT80=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 8))e-4")
           tc qdisc add dev $INTERFACE root handle 1: htb default 12
           tc class add dev $INTERFACE parent 1: classid 1:1 htb rate $LIMIT ceil $LIMIT burst 10k
@@ -358,10 +358,6 @@ Resources:
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p icmp -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 53 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 53 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 80 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 80 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 443 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 443 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 22 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 22 -j CLASSIFY --set-class 1:10
           # a couple more tables to tag short, TCP signalling packets correctly
@@ -409,7 +405,7 @@ Resources:
           # At this point, the NAT instance is done. The next lines limit bandwidth
           LIMIT=$(printf "%.0fkbit" "$((10**3 * ${MaxBandwidth}))")
           LIMIT20=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
-          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 2))e-4")
+          LIMIT40=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 4))e-4")
           LIMIT80=$(printf "%.0fkbit" "$((10**6 * ${MaxBandwidth} * 8))e-4")
           tc qdisc add dev $INTERFACE root handle 1: htb default 12
           tc class add dev $INTERFACE parent 1: classid 1:1 htb rate $LIMIT ceil $LIMIT burst 10k
@@ -424,10 +420,6 @@ Resources:
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p icmp -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 53 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 53 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 80 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 80 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 443 -j CLASSIFY --set-class 1:10
-          iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 443 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --sport 22 -j CLASSIFY --set-class 1:10
           iptables -t mangle -A POSTROUTING -o $INTERFACE -p tcp --dport 22 -j CLASSIFY --set-class 1:10
           # a couple more tables to tag short, TCP signalling packets correctly
