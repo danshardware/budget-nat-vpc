@@ -1,11 +1,13 @@
 # Budget NAT for VPCs
-*AWS VPC Templates using budget NAT instances*
+*[AWS VPC Templates](https://github.com/danshardware/budget-nat-vpc) using budget NAT instances, assembled by Dan Afonso*
 
 ## What is it?
 
 This is 2 different CloudFormation scripts that will spin up a VPC with 2 public subnets, 
 2 private subnets, 1 or 2 NAT gateways, some sercvice endpoints for SSM and S3, and 
 tag everything with a `CostCenter` tag, as well perform some traffic shaping/limiting. 
+
+![Architecture diagram](budget-nat-vpc-diagram.png)
 
 This allows you to quickly spin up a VPC that has NAT without paying the fee for managed 
 NAT Gateways, and do it easily. I included bandwidth shaping and limiting to prevent issues
