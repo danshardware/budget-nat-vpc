@@ -1,0 +1,43 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "validate-template",
+            "type": "shell",
+            "command": "aws cloudformation validate-template --template-body file://${file}",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new"
+            }
+        },
+        {
+            "label": "deploy",
+            "type": "shell",
+            "command": "aws cloudformation deploy --template-file ${file} --stack-name ${fileDirname} --parameter-overrides file://./parameters-testing.json --disable-rollback --capabilities CAPABILITY_IAM",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new"
+            }
+        },
+        {
+            "label": "delete-stack",
+            "type": "shell",
+            "command": "aws cloudformation delete-stack --stack-name ${fileDirname}",
+            "problemMatcher": [],
+            "presentation": {
+                "panel": "new",
+                "reveal": "never"
+            }
+        }
+    ]
+}

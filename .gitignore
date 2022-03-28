@@ -1,6 +1,5 @@
 # Ignore parameter files
 parameters-*.json
-.vscode/tasks.json
 
 *.tmp
 
