@@ -99,55 +99,55 @@ Conditions:
 Mappings:
   AWSAMIRegionMap:
     ap-northeast-1:
-      AMI: ami-0800db40f6e26830c
+      AMI: ami-0d874cf52d89e1e4b
       type: t4g
     ap-northeast-2:
-      AMI: ami-0f3a772251a577ef5
+      AMI: ami-06a997e23f0199d45
       type: t4g
     ap-northeast-3:
-      AMI: ami-0b952639ebf988d92
+      AMI: ami-063f458e2f70f8951
       type: t4g
     ap-south-1:
-      AMI: ami-0e6658a4ead79ca75
+      AMI: ami-0494f7473bf694265
       type: t4g
     ap-southeast-1:
-      AMI: ami-068744a0751408143
+      AMI: ami-0b404894f3a1e6da0
       type: t4g
     ap-southeast-2:
-      AMI: ami-0152039248f1ee03f
+      AMI: ami-0c1c73154cfdcc852
       type: t4g
     ca-central-1:
-      AMI: ami-0cac40fc6c70522a6
+      AMI: ami-045efbe545362bcfa
       type: t4g
     eu-central-1:
-      AMI: ami-06e0f87a4491c1b8b
+      AMI: ami-08b91e717872d4caf
       type: t4g
     eu-north-1:
-      AMI: ami-0817cb16be117c750
+      AMI: ami-06c417cf0d6b13d9c
       type: t4g
     eu-west-1:
-      AMI: ami-0bb2387e584b28b9c
+      AMI: ami-06055ab1b3dc70f03
       type: t4g
     eu-west-2:
-      AMI: ami-0532b93463005db15
+      AMI: ami-08a5f51a19810bf69
       type: t4g
     eu-west-3:
-      AMI: ami-01a790ae76e9f8a07
+      AMI: ami-0958b74cb185c1beb
       type: t4g
     sa-east-1:
-      AMI: ami-096cd58c3fc542241
+      AMI: ami-04e03458901339bf1
       type: t4g
     us-east-1:
-      AMI: ami-00315de4391ce4f6d
+      AMI: ami-090230ed0c6b13c74
       type: t4g
     us-east-2:
-      AMI: ami-0264aa084692a7aa1
+      AMI: ami-00b9738bf35b1d1de
       type: t4g
     us-west-1:
-      AMI: ami-0fda9f22793342947
+      AMI: ami-0e48a188782d0412a
       type: t4g
     us-west-2:
-      AMI: ami-0b1726c83b5f200ed
+      AMI: ami-0d3127dab514c6a1a
       type: t4g
 
 Resources:

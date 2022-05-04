@@ -1,60 +1,68 @@
 # Budget NAT for VPCs
+
 *[AWS VPC Templates](https://github.com/danshardware/budget-nat-vpc) using budget NAT instances, assembled by Dan Afonso*
 
 ## What is it?
 
-This is 2 different CloudFormation scripts that will spin up a VPC with 2 public subnets, 
-2 private subnets, 1 or 2 NAT gateways, some sercvice endpoints for SSM and S3, and 
-tag everything with a `CostCenter` tag, as well perform some traffic shaping/limiting. 
+This is a CloudFormation template that will spin up a VPC with 2 public subnets,
+2 private subnets, 1 or 2 NAT gateways, some service endpoints for SSM and S3, and
+tag everything with a `CostCenter` tag, as well perform some traffic shaping/limiting.
 
 ![Architecture diagram](budget-nat-vpc-diagram.png)
 
-This allows you to quickly spin up a VPC that has NAT without paying the fee for managed 
+This allows you to quickly spin up a VPC that has NAT without paying the fee for managed
 NAT Gateways, and do it easily. I included bandwidth shaping and limiting to prevent issues
-where a rogue instance tries to saturate your pipe. The limts give you time to respond to alerts 
+where a rogue instance tries to saturate your pipe. The limits give you time to respond to alerts
 before your bill goes out of control.
 
 ## Why would I want this?
 
-NAT Gateways are expensive, reletive to test workloads much of the time. They are about $45/mo + 
-traffic + processing fees based on how much work they need to do. This solution runs about $3/mo in 
+NAT Gateways are expensive, relative to test workloads much of the time. They are about $45/mo +
+traffic + processing fees based on how much work they need to do. This solution runs about $3/mo in
 us-east-2
 
 ## Why would I not want this
 
-AWS's managed NAT Gateways are far superior in terms of reliability, durability, and scalability. If you 
-depend on NAT for time-sensitive production functions, you should use managed NAT gateways.
+AWS's managed NAT Gateways are far superior in terms of reliability, durability, and scalability. If you
+depend on NAT for time-sensitive production functions, you should use managed NAT gateways and do the
+necessary monitoring and securing required to contain costs in the event of a bandwidth tsunami.
 
 ## How do I use it?
 
-It's a CloudFormation template. Pick the one you want (I recommend the `VPC-2-az-1-nat.yaml` for most dev workloads), 
-create a stack in the console, fill out the form, and let it spin up the VPC. From there, add your resources into the appropriate subnets in the new VPC.
+It's a CloudFormation template. Create a stack in the console, fill out the form, and let it spin up
+the VPC. From there, add your resources into the appropriate subnets in the new VPC.
 
 If you want to run it from the command line, do the following:
 
-1. copy `paramters.template.json` to `parameters-${env}.json` (replace `${env}` with whatever 
-    prefix you will give these resources. `dev` or `test` works well)
+1. copy `parameters.template.json` to `parameters-${env}.json` (replace `${env}` with whatever
+    prefix you will give these resources. `dev`, `prod`, or `test` work well)
 1. Edit the file so the parameters match what you want
-1. run 
-    ```
+1. run
+
+    ```sh
     aws cloudformation deploy --template-file ${file} --stack-name ${stackName} \
     --parameter-overrides file://./parameters-${env}.json \
     --capabilities CAPABILITY_IAM
     ```
-    and replace the variables as appropriate:
-    * `${file}` should be the tempalte you chose
-    * `${stackName}` is what this will show up as in cloud formation. I'd go with something like `DEV-VPC`
-1. Check the console for updates and fix any issues that arrise
 
-Any new instances you bring up in the new VPC should have a role atatched that allows access from SSM, preventing you
-from needing to use SSH and bastions. 
+    and replace the variables as appropriate:
+    * `${file}` should be the template you chose
+    * `${stackName}` is what this will show up as in cloud formation. I'd go with something like `DEV-VPC`
+1. Check the console for updates and fix any issues that arise
+
+Any new instances you bring up in the new VPC should have a role attached that allows access from SSM, preventing you
+from needing to use SSH and bastions.
 
 ## Updating the AMI mappings
 
 I've included a script that will create a new mapping section for the file with updated AMIs. AWS tends to update these
-fairly regualrly. I use the script (requires boto3 amd PyYAML available), to update the mapping section every once in a while.
+fairly regularly. I use the script (requires boto3 amd PyYAML available), to update the mapping section every once in a while.
+Make a virtual environment (`python3 -m venv venv`), run the activate script (depends on OS you're using), install the modules
+(`pip -r requirements.txt`), setup your environment to connect to AWS, and run it (`python update_mappings.py`). After it runs,
+copy and paste the `Mappings:...` section into the template.
 
-You can re-deploy with new mappings as maintenance. Since this re-provisions the machine each time you change the AMI, this prevents the need to run updates on the NAT instances. There will be a short down time as the new instances come up.
+You can re-deploy with new mappings as maintenance. Since this re-provisions the machine each time you change the AMI,
+this prevents the need to run updates on the NAT instances. There will be a short down time as the new instances come up.
 
 ## Bonus: My tasks.json file
 

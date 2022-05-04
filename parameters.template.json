@@ -1,14 +1,46 @@
 [
     {
-        "ParameterKey":   "Prefix",
-        "ParameterValue": "Testing"
+        "ParameterKey": "Prefix",
+        "ParameterValue": "dev"
     },
     {
-        "ParameterKey":   "CostCenter",
-        "ParameterValue": "123456"
+        "ParameterKey": "CostCenter",
+        "ParameterValue": ""
     },
     {
-        "ParameterKey":   "EnableSSMEndpoint",
-        "ParameterValue": "yes"
+        "ParameterKey": "MaxBandwidth",
+        "ParameterValue": "100"
+    },
+    {
+        "ParameterKey": "GatewayCount",
+        "ParameterValue": "2"
+    },
+    {
+        "ParameterKey": "InstanceSize",
+        "ParameterValue": "nano"
+    },
+    {
+        "ParameterKey": "EnableSSMEndpoint",
+        "ParameterValue": "no"
+    },
+    {
+        "ParameterKey": "VpcCIDR",
+        "ParameterValue": "10.0.0.0/16"
+    },
+    {
+        "ParameterKey": "CIDRPublic1",
+        "ParameterValue": "10.0.0.0/24"
+    },
+    {
+        "ParameterKey": "CIDRPublic2",
+        "ParameterValue": "10.0.1.0/24"
+    },
+    {
+        "ParameterKey": "CIDRPrivate1",
+        "ParameterValue": "10.0.128.0/24"
+    },
+    {
+        "ParameterKey": "CIDRPrivate2",
+        "ParameterValue": "10.0.129.0/24"
     }
 ]
