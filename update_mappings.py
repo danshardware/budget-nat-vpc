@@ -25,10 +25,10 @@ for region in response['Regions']:
             {'Name': 'name', 'Values': ['amzn2-ami-hvm-*']}
             ]
     )
-    instanceType = "t4g.nano"
+    instanceType = "t4g"
     if len(candidates["Images"]) == 0:
         arch = 'x86_64'
-        instanceType = "t2.nano"
+        instanceType = "t3"
         candidates = ec2_request.describe_images(
             Filters=[
                 {'Name': 'virtualization-type', 'Values': ['hvm']},

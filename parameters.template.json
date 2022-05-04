@@ -6,5 +6,9 @@
     {
         "ParameterKey":   "CostCenter",
         "ParameterValue": "123456"
+    },
+    {
+        "ParameterKey":   "EnableSSMEndpoint",
+        "ParameterValue": "yes"
     }
 ]
