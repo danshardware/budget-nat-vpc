@@ -1,5 +1,38 @@
 {
     "cSpell.words": [
         "boto"
+    ],
+    
+    "yaml.customTags": [
+        "!And sequence",
+        "!If sequence",
+        "!Not sequence",
+        "!Equals sequence",
+        "!Or sequence",
+        "!FindInMap sequence",
+        "!Base64 mapping",
+        "!Cidr sequence",
+        "!Ref",
+        "!Sub sequence",
+        "!Sub",
+        "!GetAtt sequence",
+        "!GetAtt",
+        "!GetAZs",
+        "!ImportValue",
+        "!Select",
+        "!Select sequence",
+        "!Split sequence",
+        "!Join sequence",
+        "!And",
+        "!If",
+        "!Not",
+        "!Equals",
+        "!Or",
+        "!FindInMap",
+        "!Base64",
+        "!Join",
+        "!Cidr",
+        "!ImportValue sequence",
+        "!Split"
     ]
 }
