@@ -434,6 +434,7 @@ Resources:
           - !Ref AWS::NoValue
   NatEip2:
     Type: AWS::EC2::EIP
+    Condition: HasTwoNAT
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
@@ -565,6 +566,7 @@ Resources:
             systemctl enable traffic_shaping.service
   Nat2:
     Type: AWS::EC2::Instance
+    Condition: HasTwoNAT
     Properties:
       IamInstanceProfile: !Ref 'NatProfile'
       ImageId: !FindInMap
